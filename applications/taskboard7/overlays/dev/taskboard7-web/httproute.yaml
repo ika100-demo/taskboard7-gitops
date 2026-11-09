@@ -1,0 +1,23 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: taskboard7-web
+  labels:
+    app: taskboard7-web
+    app.kubernetes.io/name: taskboard7-web
+    app.kubernetes.io/part-of: taskboard7
+    app.kubernetes.io/managed-by: gitops-app
+spec:
+  parentRefs:
+  - name: traefik-gateway
+    namespace: kube-system
+  hostnames:
+  - taskboard7-web.taskboard7-dev.localhost
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: taskboard7-web
+      port: 80
