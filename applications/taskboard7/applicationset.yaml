@@ -36,7 +36,9 @@ metadata:
 spec:
   generators:
   - list:
-      elements: []
+      elements:
+      - name: taskboard7-api
+      - name: taskboard7-web
   template:
     metadata:
       name: '{{name}}-staging'
@@ -109,6 +111,93 @@ spec:
       syncPolicy:
         automated:
           prune: false
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: taskboard7-addons-config-dev
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - name: observability
+  template:
+    metadata:
+      name: addon-{{name}}-dev
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/ika100-demo/taskboard7-gitops
+        targetRevision: main
+        path: applications/taskboard7/addons/dev/{{name}}
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: taskboard7-dev
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: taskboard7-addons-staging
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - name: postgres
+  template:
+    metadata:
+      name: addon-{{name}}-staging
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/ika100-demo/taskboard7-gitops
+        targetRevision: main
+        path: applications/taskboard7/addons/staging/{{name}}
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: taskboard7-staging
+      syncPolicy:
+        automated:
+          prune: false
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: taskboard7-addons-config-staging
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - name: observability
+  template:
+    metadata:
+      name: addon-{{name}}-staging
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/ika100-demo/taskboard7-gitops
+        targetRevision: main
+        path: applications/taskboard7/addons/staging/{{name}}
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: taskboard7-staging
+      syncPolicy:
+        automated:
+          prune: true
           selfHeal: true
         syncOptions:
         - CreateNamespace=true
