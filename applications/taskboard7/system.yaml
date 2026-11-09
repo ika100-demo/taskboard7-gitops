@@ -96,3 +96,12 @@ resources:
     type: bucket
     storage: 10Gi
     versioning: false
+  postgres:
+    type: database
+    version: 17
+    replicas: 1
+    storage: 1Gi
+    instances:
+      prod:
+        replicas: 3
+        storage: 20Gi
