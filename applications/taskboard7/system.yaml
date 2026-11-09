@@ -59,6 +59,7 @@ components:
         memory: 512Mi
     instances:
       dev: {}
+      staging: {}
     expose:
       host: taskboard7-api
   taskboard7-web:
@@ -87,5 +88,6 @@ components:
         memory: 512Mi
     instances:
       dev: {}
+      staging: {}
     expose:
       host: taskboard7-web
