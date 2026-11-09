@@ -27,6 +27,8 @@ spec:
         - name: http
           containerPort: 3000
         env:
+        - name: API_URL
+          value: http://taskboard7-api
         - name: NODE_ENV
           value: production
         - name: PORT
