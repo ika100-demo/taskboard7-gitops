@@ -38,7 +38,7 @@ As a person using the taskboard, I want to add a task with a title and an option
 
 - Updating, completing or deleting tasks, in the API or in the web app.
 - Filtering, sorting options, paging or search.
-- Users, login, ownership or per-person task lists.
+- Users, login, ownership or per-person task lists: while the system runs in dev only, everyone who can reach the web app or the Task API may see and create every task; login is a later spec.
 - New task fields (description, status, priority, timestamps).
 - Carrying over tasks that exist only in the memory of the currently running Task API.
 - Database backups and restore, and running the system in staging or prod (the components stay in dev only).
@@ -56,8 +56,9 @@ As a person using the taskboard, I want to add a task with a title and an option
 
 ## Open questions
 
-- Without any login, everyone who can reach the web app (and the Task API, which stays exposed) can see and create every task. Is that acceptable for now? (suggested: yes, open access while the system runs in dev only; login is a later spec; affects AC-001.5, AC-001.6, new criterion if no)
+- ~~Without any login, everyone who can reach the web app (and the Task API, which stays exposed) can see and create every task. Is that acceptable for now?~~ Answered 2026-11-09: yes, open access while the system runs in dev only; login is a later spec, see Non-goals.
 
 ## Changelog
 
 - 2026-11-09 created
+- 2026-11-09 amended: open access without login confirmed for dev only, recorded as a non-goal; no criteria changed
