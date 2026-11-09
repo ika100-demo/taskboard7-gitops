@@ -1,0 +1,27 @@
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: taskboard7-postgres
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: taskboard7
+    app.kubernetes.io/managed-by: gitops-app
+spec:
+  retentionPolicy: 30d
+  configuration:
+    destinationPath: s3://taskboard7-backups/databases
+    endpointURL: http://taskboard7-backups-filer.taskboard7-prod.svc:8333
+    s3Credentials:
+      accessKeyId:
+        name: taskboard7-backups-app
+        key: accessKeyId
+      secretAccessKey:
+        name: taskboard7-backups-app
+        key: secretAccessKey
+      region:
+        name: taskboard7-backups-app
+        key: region
+    wal:
+      compression: gzip
+    data:
+      compression: gzip
