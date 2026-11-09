@@ -1,62 +1,107 @@
 ---
 plan_id: 001-persistent-tasks-in-postgres-with-web-ui
 spec: 001-persistent-tasks-in-postgres-with-web-ui
-feature: Keep tasks in a Postgres database behind the Task API and give the web app a task page to list and add tasks
+feature: Keep tasks in a Postgres database behind the Task API and give the web app a task page to list
+  and add tasks
 gitops_app: ika100-demo/taskboard7-gitops
-status: draft
+status: completed
 repos:
-  - id: taskboard7-gitops
-    shape: gitops-app
-    summary: Declare the postgres resource, give it to the Task API and point the web app at the Task API
-    acs: [AC-001.1, AC-001.2, AC-001.5, AC-001.6]
-    gitops:
-      - {resource: postgres}
-      - {uses: postgres, component: taskboard7-api}
-      - {env: {API_URL: 'http://taskboard7-api'}, component: taskboard7-web}
-    depends_on: []
-    done: false
-  - id: taskboard7-api
-    shape: service-python
-    summary: Store tasks in Postgres so they survive restarts and are shared between instances
-    acs: [AC-001.1, AC-001.2, AC-001.3, AC-001.4]
-    criteria:
-      - "Given tasks A, B and C were created with POST /tasks, when the Task API process is stopped and started again against the same database and a client sends GET /tasks, then the response is 200 with exactly A, B and C, oldest first, each with the same id, title and due_date as returned on creation (system AC-001.1)"
-      - "Given two Task API processes connected to the same database, when a task is created with POST /tasks on one of them, then GET /tasks on the other returns that task with the same id, title and due_date (system AC-001.2)"
-      - "Given the database, when clients use POST /tasks and GET /tasks, then every criterion of component spec 001 (AC-001.1 to AC-001.7) still holds unchanged: 201 with id, title and due_date (null when absent); 422 in FastAPI's standard validation shape naming title or due_date, with no task stored; GET /tasks returns all tasks oldest first, [] for an empty database; equal titles get different ids (system AC-001.3)"
-      - "Given the database is unreachable, when a client sends a valid POST /tasks or a GET /tasks, then the response is 503 with the JSON body {\"detail\": \"Database unavailable\"} within 5 seconds, and once the database is back no task from that POST exists (system AC-001.4)"
-      - "Given the database is unreachable, when the platform calls GET /ready, then it answers 503 with {\"status\": \"not ready\"} while GET /health keeps answering 200; given the database is reachable, GET /ready answers 200 with {\"status\": \"ready\"} (system AC-001.4)"
-      - "Given the Task API was started or kept running while the database was unreachable, when the database becomes reachable again, then GET /ready, POST /tasks and GET /tasks succeed without restarting the Task API (system AC-001.4)"
-    arguments: |
-      Connection: read DATABASE_URL (postgresql://...), injected by the gitops `uses: postgres`; the PG* variables are
-      also set. Locally and in tests use a throw-away Postgres (testcontainers or the devbox service). The process must
-      start even when the database is unreachable (no crash loop): connect lazily, create the schema (or run the
-      migration) on first successful connection, and reconnect on the next request.
-      Storage: one table `tasks` (id text primary key holding a uuid4 string, title text not null, due_date date null,
-      seq bigint generated always as identity) ordered by seq for "oldest first"; tasks in memory are not carried over.
-      Replace the in-memory TaskStore behind get_task_store, keep the router and models unchanged.
-      Database timeouts: connect 2 s, statement 3 s, /ready check (SELECT 1) 1 s; never retry a POST insert.
-    depends_on: [taskboard7-gitops]
-    done: false
-  - id: taskboard7-web
-    shape: web-nextjs
-    summary: Task page on the root route that lists tasks and adds a task through the Task API
-    acs: [AC-001.5, AC-001.6, AC-001.7, AC-001.8]
-    criteria:
-      - "Given the Task API's GET /tasks returns tasks, when a person opens the root page, then it lists every task in the order the API returns them (oldest first), each with its title and its due_date as YYYY-MM-DD, or \"No due date\" when due_date is null (system AC-001.5)"
-      - "Given the Task API's GET /tasks returns [], when a person opens the root page, then it shows \"No tasks yet\" and the create form (system AC-001.5)"
-      - "Given the root page, when a person enters a valid title, optionally picks a due date in the date picker and submits, then the web app sends POST /tasks with {\"title\": <as entered, not trimmed>, \"due_date\": \"YYYY-MM-DD\" or null} to the Task API, and on 201 the returned task appears at the end of the list without a page reload and the form is cleared (system AC-001.6)"
-      - "Given the create form, when a person submits a title that is empty or only whitespace, then \"Enter a title\" is shown next to the title field; when the title is longer than 200 characters (Unicode code points), then \"Title can be at most 200 characters\" is shown there; in both cases the entered values stay and no POST /tasks is sent (system AC-001.7)"
-      - "Given the Task API is unreachable, does not answer within 5 seconds, or answers GET /tasks with anything but 200 and a JSON array, when a person opens the root page, then it shows \"Tasks could not be loaded. Try again later.\" instead of the list (system AC-001.8)"
-      - "Given the Task API is unreachable, does not answer within 5 seconds, or answers POST /tasks with anything but 201 (including 422 and 503), when a person submits the create form, then it shows \"The task could not be saved. Try again.\", keeps the entered values and leaves the list unchanged (system AC-001.8)"
-    arguments: |
-      The browser never calls the Task API: the Next.js server does, at the base URL from the server-only env var
-      API_URL (default http://localhost:8080 for local dev; set to http://taskboard7-api in the cluster; never a
-      NEXT_PUBLIC_ variable). Render the list on the server (dynamic, no caching) and submit the form through a Server
-      Action or an app/api route handler that calls POST /tasks and returns the created task to a client component.
-      Replace the starter content of app/page.tsx; document API_URL in docs/env-vars.md. Unit/e2e tests stub the
-      Task API (contract below); no live API needed.
-    depends_on: []
-    done: false
+- id: taskboard7-gitops
+  shape: gitops-app
+  summary: Declare the postgres resource, give it to the Task API and point the web app at the Task API
+  acs:
+  - AC-001.1
+  - AC-001.2
+  - AC-001.5
+  - AC-001.6
+  gitops:
+  - resource: postgres
+  - uses: postgres
+    component: taskboard7-api
+  - env:
+      API_URL: http://taskboard7-api
+    component: taskboard7-web
+  depends_on: []
+  done: true
+- id: taskboard7-api
+  shape: service-python
+  summary: Store tasks in Postgres so they survive restarts and are shared between instances
+  acs:
+  - AC-001.1
+  - AC-001.2
+  - AC-001.3
+  - AC-001.4
+  criteria:
+  - Given tasks A, B and C were created with POST /tasks, when the Task API process is stopped and started
+    again against the same database and a client sends GET /tasks, then the response is 200 with exactly
+    A, B and C, oldest first, each with the same id, title and due_date as returned on creation (system
+    AC-001.1)
+  - Given two Task API processes connected to the same database, when a task is created with POST /tasks
+    on one of them, then GET /tasks on the other returns that task with the same id, title and due_date
+    (system AC-001.2)
+  - 'Given the database, when clients use POST /tasks and GET /tasks, then every criterion of component
+    spec 001 (AC-001.1 to AC-001.7) still holds unchanged: 201 with id, title and due_date (null when
+    absent); 422 in FastAPI''s standard validation shape naming title or due_date, with no task stored;
+    GET /tasks returns all tasks oldest first, [] for an empty database; equal titles get different ids
+    (system AC-001.3)'
+  - 'Given the database is unreachable, when a client sends a valid POST /tasks or a GET /tasks, then
+    the response is 503 with the JSON body {"detail": "Database unavailable"} within 5 seconds, and once
+    the database is back no task from that POST exists (system AC-001.4)'
+  - 'Given the database is unreachable, when the platform calls GET /ready, then it answers 503 with {"status":
+    "not ready"} while GET /health keeps answering 200; given the database is reachable, GET /ready answers
+    200 with {"status": "ready"} (system AC-001.4)'
+  - Given the Task API was started or kept running while the database was unreachable, when the database
+    becomes reachable again, then GET /ready, POST /tasks and GET /tasks succeed without restarting the
+    Task API (system AC-001.4)
+  arguments: |
+    Connection: read DATABASE_URL (postgresql://...), injected by the gitops `uses: postgres`; the PG* variables are
+    also set. Locally and in tests use a throw-away Postgres (testcontainers or the devbox service). The process must
+    start even when the database is unreachable (no crash loop): connect lazily, create the schema (or run the
+    migration) on first successful connection, and reconnect on the next request.
+    Storage: one table `tasks` (id text primary key holding a uuid4 string, title text not null, due_date date null,
+    seq bigint generated always as identity) ordered by seq for "oldest first"; tasks in memory are not carried over.
+    Replace the in-memory TaskStore behind get_task_store, keep the router and models unchanged.
+    Database timeouts: connect 2 s, statement 3 s, /ready check (SELECT 1) 1 s; never retry a POST insert.
+  depends_on:
+  - taskboard7-gitops
+  done: true
+- id: taskboard7-web
+  shape: web-nextjs
+  summary: Task page on the root route that lists tasks and adds a task through the Task API
+  acs:
+  - AC-001.5
+  - AC-001.6
+  - AC-001.7
+  - AC-001.8
+  criteria:
+  - Given the Task API's GET /tasks returns tasks, when a person opens the root page, then it lists every
+    task in the order the API returns them (oldest first), each with its title and its due_date as YYYY-MM-DD,
+    or "No due date" when due_date is null (system AC-001.5)
+  - Given the Task API's GET /tasks returns [], when a person opens the root page, then it shows "No tasks
+    yet" and the create form (system AC-001.5)
+  - 'Given the root page, when a person enters a valid title, optionally picks a due date in the date
+    picker and submits, then the web app sends POST /tasks with {"title": <as entered, not trimmed>, "due_date":
+    "YYYY-MM-DD" or null} to the Task API, and on 201 the returned task appears at the end of the list
+    without a page reload and the form is cleared (system AC-001.6)'
+  - Given the create form, when a person submits a title that is empty or only whitespace, then "Enter
+    a title" is shown next to the title field; when the title is longer than 200 characters (Unicode code
+    points), then "Title can be at most 200 characters" is shown there; in both cases the entered values
+    stay and no POST /tasks is sent (system AC-001.7)
+  - Given the Task API is unreachable, does not answer within 5 seconds, or answers GET /tasks with anything
+    but 200 and a JSON array, when a person opens the root page, then it shows "Tasks could not be loaded.
+    Try again later." instead of the list (system AC-001.8)
+  - Given the Task API is unreachable, does not answer within 5 seconds, or answers POST /tasks with anything
+    but 201 (including 422 and 503), when a person submits the create form, then it shows "The task could
+    not be saved. Try again.", keeps the entered values and leaves the list unchanged (system AC-001.8)
+  arguments: |
+    The browser never calls the Task API: the Next.js server does, at the base URL from the server-only env var
+    API_URL (default http://localhost:8080 for local dev; set to http://taskboard7-api in the cluster; never a
+    NEXT_PUBLIC_ variable). Render the list on the server (dynamic, no caching) and submit the form through a Server
+    Action or an app/api route handler that calls POST /tasks and returns the created task to a client component.
+    Replace the starter content of app/page.tsx; document API_URL in docs/env-vars.md. Unit/e2e tests stub the
+    Task API (contract below); no live API needed.
+  depends_on: []
+  done: true
 gitops_pin: []
 ---
 
