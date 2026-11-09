@@ -91,3 +91,21 @@ components:
       staging: {}
     expose:
       host: taskboard7-web
+resources:
+  backups:
+    type: bucket
+    storage: 10Gi
+    versioning: false
+  postgres:
+    type: database
+    version: 17
+    replicas: 1
+    storage: 1Gi
+    instances:
+      prod:
+        replicas: 3
+        storage: 20Gi
+        backup:
+          to: backups
+          schedule: "0 3 * * *"
+          retention: 30d
