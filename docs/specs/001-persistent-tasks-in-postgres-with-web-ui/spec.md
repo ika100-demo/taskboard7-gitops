@@ -1,7 +1,7 @@
 ---
 spec_id: 001-persistent-tasks-in-postgres-with-web-ui
 title: Persistent tasks in Postgres with web UI
-status: draft
+status: approved
 priority: P1
 shape: gitops-app
 ---
@@ -62,3 +62,4 @@ As a person using the taskboard, I want to add a task with a title and an option
 
 - 2026-11-09 created
 - 2026-11-09 amended: open access without login confirmed for dev only, recorded as a non-goal; no criteria changed
+- 2026-11-09 approved
